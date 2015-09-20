@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings,TemplateHaskell #-}
 module Web.MyWai(
-  ContentType(..),Cookie(..),HttpRequest(..),Responder(..),cookieHeader,contentType, removeCookie,bodyParams,jsonBody
+  ContentType(..),Cookie(..),HttpRequest(..),Responder(..),cookieHeader,contentType, removeCookie,bodyParams,jsonBody,jsonOk
   )
 where
 
@@ -41,8 +41,8 @@ class Responder a where
 redirect303 :: C8.ByteString -> [Header] -> IO Response
 redirect303 redirectTo hdrs = return $ responseLBS status303 ((hLocation, redirectTo) : hdrs) ""
 
---jsonOk :: ToJSON a => a -> Response
---jsonOk obj = responseLBS status200 [contentType JsonContent] (encode obj)
+jsonOk :: ToJSON a => a -> Response
+jsonOk obj = responseLBS status200 [contentType JsonContent] (encode obj)
 
 cookieHeader :: Cookie -> Header
 cookieHeader cookie = ("Set-Cookie", TE.encodeUtf8 (T.concat [(cookieName cookie), "=", (cookieValue cookie), "; Path=/"]))
@@ -54,7 +54,6 @@ contentType :: ContentType -> Header
 contentType JsonContent = (hContentType, "application/json; charset=utf-8")
 contentType TxtContent = (hContentType, "text/plain; charset=utf-8")
 contentType HtmlContent = (hContentType, "text/html; charset=utf-8")
-
 
 jsonBody :: FromJSON a => HttpRequest -> Maybe a
 jsonBody req = do
