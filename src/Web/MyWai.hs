@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings,TemplateHaskell #-}
 module Web.MyWai(
-  ContentType(..),Cookie(..),HttpRequest(..),Responder(..),cookieHeader,contentType, removeCookie,bodyParams,jsonBody,jsonOk
+  ContentType(..),Cookie(..),HttpRequest(..),Responder(..),cookieHeader,contentType, removeCookie,bodyParams,jsonBody,jsonOk, parseRequest
   )
 where
 
@@ -29,7 +29,7 @@ data HttpRequest = HttpRequest { path :: [T.Text], method :: StdMethod,
                                  headers :: [(HeaderName, T.Text)], cookies :: [Cookie],
                                  body :: Maybe B.ByteString } deriving (Show,Eq)
 
-data HttpResponse = HttpResponse { body :: T.Text, status :: Status, responseHeaders :: [Header]}
+data HttpResponse = HttpResponse { responseBody :: T.Text, status :: Status, responseHeaders :: [Header]}
 
                                              
 -- redirect, notfound, nocontent, unauthorized, internalerror
@@ -79,11 +79,11 @@ parseRequest req = let path = pathInfo req
                    in
                     do
                       maybeReqBody <- asRequestBody req method
-                      return $ HttpRequest path method urlParams headers cookies Nothing
+                      return $ HttpRequest path method urlParams headers cookies maybeReqBody
                         where
                           asRequestBody r PUT = bodyChunks r []
                           asRequestBody r POST = bodyChunks r []
-                          asRequestBody _ _ = return  Nothing
+                          asRequestBody _ m = return  Nothing
                           
 -- private functions
 getCookies :: [(HeaderName, T.Text)]  -> [Cookie]
