@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings,TemplateHaskell #-}
 module Web.MyWai(
-  ContentType(..),Cookie(..),HttpRequest(..),Responder(..),cookieHeader,contentType, removeCookie,bodyParams,jsonBody,jsonOk, parseRequest
+  ContentType(..),Cookie(..),HttpRequest(..),cookieHeader,contentType, removeCookie,bodyParams,jsonBody,jsonOk, parseRequest
   )
 where
 
@@ -28,16 +28,8 @@ data HttpRequest = HttpRequest { path :: [T.Text], method :: StdMethod,
                                  urlParams :: [(T.Text, [T.Text])],
                                  headers :: [(HeaderName, T.Text)], cookies :: [Cookie],
                                  body :: Maybe B.ByteString } deriving (Show,Eq)
-
-data HttpResponse = HttpResponse { responseBody :: T.Text, status :: Status, responseHeaders :: [Header]}
-
                                              
 -- redirect, notfound, nocontent, unauthorized, internalerror
-class Responder a where
-  response :: a -> Response
-  responseWithHeaders :: a -> [Header] -> Response
-  response a = responseWithHeaders a []
-
 
 redirect303 :: C8.ByteString -> [Header] -> IO Response
 redirect303 redirectTo hdrs = return $ responseLBS status303 ((hLocation, redirectTo) : hdrs) ""
