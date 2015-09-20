@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings,TemplateHaskell #-}
 module Web.MyWai(
-  ContentType(..),Cookie(..),HttpRequest(..),cookieHeader,contentType, removeCookie,Responder(..)
+  ContentType(..),Cookie(..),HttpRequest(..),Responder(..),cookieHeader,contentType, removeCookie,bodyParams,jsonBody
   )
 where
 
 import Network.Wai (responseLBS)
-import Network.HTTP.Types (status201, status204, status303, status404, status400,status401, status200, Header)
+import Network.HTTP.Types (status201, status204, status303, status404, status400,status401, status200, Header, Status)
 import Network.HTTP.Types.URI
 import Network.HTTP.Types.Header (hContentType,hLocation, HeaderName)
 import qualified Data.Text.Encoding as TE
@@ -29,19 +29,20 @@ data HttpRequest = HttpRequest { path :: [T.Text], method :: StdMethod,
                                  headers :: [(HeaderName, T.Text)], cookies :: [Cookie],
                                  body :: Maybe B.ByteString } deriving (Show,Eq)
 
-data EmptyResponse a = NotFound | NoContent | Unauthorized | InternalError T.Text | Redirect T.Text | BadRequest a deriving (Show, Eq)
-
-
+data HttpResponse = HttpResponse { status :: Status, responseHeaders :: [Header]}                                                                       
                                              
 -- redirect, notfound, nocontent, unauthorized, internalerror
 class Responder a where
   response :: a -> Response
   responseWithHeaders :: a -> [Header] -> Response
-
-instance (ToJSON a) => Responder (EmptyResponse a) where
   response a = responseWithHeaders a []
-  responseWithHeaders _ headers = error "foo"
 
+
+redirect303 :: C8.ByteString -> [Header] -> IO Response
+redirect303 redirectTo hdrs = return $ responseLBS status303 ((hLocation, redirectTo) : hdrs) ""
+
+--jsonOk :: ToJSON a => a -> Response
+--jsonOk obj = responseLBS status200 [contentType JsonContent] (encode obj)
 
 cookieHeader :: Cookie -> Header
 cookieHeader cookie = ("Set-Cookie", TE.encodeUtf8 (T.concat [(cookieName cookie), "=", (cookieValue cookie), "; Path=/"]))
@@ -54,6 +55,15 @@ contentType JsonContent = (hContentType, "application/json; charset=utf-8")
 contentType TxtContent = (hContentType, "text/plain; charset=utf-8")
 contentType HtmlContent = (hContentType, "text/html; charset=utf-8")
 
+
+jsonBody :: FromJSON a => HttpRequest -> Maybe a
+jsonBody req = do
+  bdy <- body req
+  (decode . BL.fromStrict) bdy
+
+bodyParams :: HttpRequest -> Maybe [(T.Text,[T.Text])]
+bodyParams = (fmap (getParams . parseQuery)) . body
+
 parseRequest :: Request -> IO HttpRequest
 parseRequest req = let path = pathInfo req
                        method = read (C8.unpack (requestMethod req)) :: StdMethod
@@ -64,8 +74,13 @@ parseRequest req = let path = pathInfo req
                     do
                       maybeReqBody <- asRequestBody req method
                       return $ HttpRequest path method urlParams headers cookies Nothing
+                        where
+                          asRequestBody r PUT = bodyChunks r []
+                          asRequestBody r POST = bodyChunks r []
+                          asRequestBody _ _ = return  Nothing
 
-
+                          
+-- private functions
 getCookies :: [(HeaderName, T.Text)]  -> [Cookie]
 getCookies headers =  catMaybes $ fmap (parseCookie . (T.split (== '='))) $ fromMaybe [] $ fmap (T.split (== ';')) (M.lookup "Cookie" (M.fromList headers))
   where
@@ -79,15 +94,7 @@ getParams query = let paramMaybes = fmap (\paramPair -> ((TE.decodeUtf8 (fst par
                    fmap
                      (\key ->
                        (key, (catMaybes $ fmap snd (filter (\k -> (fst k) == key) paramMaybes))))
-                     keys
-
-bodyParams :: HttpRequest -> Maybe [(T.Text,[T.Text])]
-bodyParams = (fmap (getParams . parseQuery)) . body
-
-asRequestBody :: Request -> StdMethod -> IO (Maybe B.ByteString)
-asRequestBody r PUT = bodyChunks r []
-asRequestBody r POST = bodyChunks r []
-asRequestBody _ _ = return  Nothing
+                     keys                     
 
 bodyChunks :: Request -> [C8.ByteString] -> IO (Maybe B.ByteString)
 bodyChunks req list = do
@@ -98,25 +105,3 @@ bodyChunks req list = do
   where
     maybeB [] = return Nothing
     maybeB l = (return . Just . B.concat) l
-
-
-notFound :: Response
-notFound = responseLBS status404 [] ""
-
-redirect303 :: C8.ByteString -> [Header] -> IO Response
-redirect303 redirectTo hdrs = return $ responseLBS status303 ((hLocation, redirectTo) : hdrs) ""
-
-
---jsonOk :: ToJSON a => a -> Response
---jsonOk obj = responseLBS status200 [contentType JsonContent] (encode obj)
-
-jsonBody :: FromJSON a => HttpRequest -> Maybe a
-jsonBody req = do
-  bdy <- body req
-  (decode . BL.fromStrict) bdy
-
-
-
-
-
-
