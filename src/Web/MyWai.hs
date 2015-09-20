@@ -29,7 +29,8 @@ data HttpRequest = HttpRequest { path :: [T.Text], method :: StdMethod,
                                  headers :: [(HeaderName, T.Text)], cookies :: [Cookie],
                                  body :: Maybe B.ByteString } deriving (Show,Eq)
 
-data HttpResponse = HttpResponse { status :: Status, responseHeaders :: [Header]}                                                                       
+data HttpResponse = HttpResponse { body :: T.Text, status :: Status, responseHeaders :: [Header]}
+
                                              
 -- redirect, notfound, nocontent, unauthorized, internalerror
 class Responder a where
@@ -60,6 +61,12 @@ jsonBody req = do
   bdy <- body req
   (decode . BL.fromStrict) bdy
 
+--param :: T.Text -> HttpRequest -> Maybe [T.Text]
+--param name req = findurlParams
+
+--bodyParam :: T.Text -> HttpRequest -> Maybe [T.Text]
+--bodyParam name req = findurlParams
+
 bodyParams :: HttpRequest -> Maybe [(T.Text,[T.Text])]
 bodyParams = (fmap (getParams . parseQuery)) . body
 
@@ -77,7 +84,6 @@ parseRequest req = let path = pathInfo req
                           asRequestBody r PUT = bodyChunks r []
                           asRequestBody r POST = bodyChunks r []
                           asRequestBody _ _ = return  Nothing
-
                           
 -- private functions
 getCookies :: [(HeaderName, T.Text)]  -> [Cookie]
