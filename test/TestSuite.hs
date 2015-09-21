@@ -4,6 +4,12 @@ import Network.Wai (Application)
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Internal as WI
 import Data.Aeson
+import Control.Monad.Trans.Reader
+import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.State
+import Control.Monad.IO.Class
+--import Control.Monad.State
+import Control.Monad
 
 main :: IO ()
 main = do
@@ -19,3 +25,22 @@ app req f = do
   putStrLn $ "****"
 --  putStrLn $ show $ (jsonBody httpReq :: Maybe Value)
   f $ jsonOk "foo"
+
+m :: IO ()
+m = do
+  res <- join $ runReaderT r2 "bar"
+  putStrLn $ show $ res
+
+--r2 :: ReaderT String IO (Maybe String)
+r2 = do
+  e <- ask
+  return $ runMaybeT $ runReaderT respond e
+  
+  
+
+respond :: ReaderT String (MaybeT IO) String
+respond = do 
+  e <- ask :: ReaderT String (MaybeT IO) String
+  liftIO $ putStrLn $ "inside0, e: " ++ show e
+  return ("foo" ++ e)
+
