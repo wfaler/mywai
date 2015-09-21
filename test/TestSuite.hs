@@ -38,8 +38,10 @@ r2 = do
     r <- respond2
     b <- respond3
     return (r ++ b)
+  list <- respond4
+  lift $ putStrLn $ show list
   lift $ putStrLn $ (show $ res) ++ " in r2"
-  
+
   
 respond2 :: MaybeT (ReaderT Int IO) String
 respond2 = do
@@ -54,3 +56,10 @@ respond3 = do
   liftIO $ putStrLn "in respond3"
   bar <- MaybeT $ return $ Just ("foo" ++ (show e))
   return bar
+
+
+-- how to do with other than transformers?
+respond4 :: (ReaderT Int IO) [String]
+respond4 = do
+  e <- (ask :: (ReaderT Int IO) Int)
+  return $ ["foo", "bar", show e]
