@@ -2,14 +2,15 @@
 import Web.MyWai
 import Network.Wai (Application)
 import Network.Wai.Handler.Warp (run)
-import Network.Wai.Internal as WI
-import Data.Aeson
+
+
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.State
+
 import Control.Monad.IO.Class
+import Control.Monad.Trans
 --import Control.Monad.State
-import Control.Monad
+
 
 main :: IO ()
 main = do
@@ -28,19 +29,28 @@ app req f = do
 
 m :: IO ()
 m = do
-  res <- join $ runReaderT r2 "bar"
-  putStrLn $ show $ res
-
---r2 :: ReaderT String IO (Maybe String)
+  runReaderT r2 "bar"
+  putStrLn "done"
+  
+r2 :: ReaderT String IO ()
 r2 = do
-  e <- ask
-  return $ runMaybeT $ runReaderT respond e
+  res <- runMaybeT $ do
+    r <- respond2
+    b <- respond3
+    return (r ++ b)
+  lift $ putStrLn $ (show $ res) ++ " in r2"
   
   
+respond2 :: MaybeT (ReaderT String IO) String
+respond2 = do
+  e <- lift $ (ask :: (ReaderT String IO) String)
+  liftIO $ putStrLn "in respond2"
+  bar <- MaybeT $ return $ Just ("foo" ++ e)
+  return bar
 
-respond :: ReaderT String (MaybeT IO) String
-respond = do 
-  e <- ask :: ReaderT String (MaybeT IO) String
-  liftIO $ putStrLn $ "inside0, e: " ++ show e
-  return ("foo" ++ e)
-
+respond3 :: MaybeT (ReaderT String IO) String
+respond3 = do
+  e <- lift $ (ask :: (ReaderT String IO) String)
+  liftIO $ putStrLn "in respond3"
+  bar <- MaybeT $ return $ Just ("foo" ++ e)
+  return bar
