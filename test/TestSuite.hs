@@ -29,10 +29,10 @@ app req f = do
 
 m :: IO ()
 m = do
-  runReaderT r2 "bar"
+  runReaderT r2 5
   putStrLn "done"
   
-r2 :: ReaderT String IO ()
+r2 :: ReaderT Int IO ()
 r2 = do
   res <- runMaybeT $ do
     r <- respond2
@@ -41,16 +41,16 @@ r2 = do
   lift $ putStrLn $ (show $ res) ++ " in r2"
   
   
-respond2 :: MaybeT (ReaderT String IO) String
+respond2 :: MaybeT (ReaderT Int IO) String
 respond2 = do
-  e <- lift $ (ask :: (ReaderT String IO) String)
+  e <- lift $ (ask :: (ReaderT Int IO) Int)
   liftIO $ putStrLn "in respond2"
-  bar <- MaybeT $ return $ Just ("foo" ++ e)
+  bar <- MaybeT $ return $ Just ("foo" ++ (show e))
   return bar
 
-respond3 :: MaybeT (ReaderT String IO) String
+respond3 :: MaybeT (ReaderT Int IO) String
 respond3 = do
-  e <- lift $ (ask :: (ReaderT String IO) String)
+  e <- lift $ (ask :: (ReaderT Int IO) Int)
   liftIO $ putStrLn "in respond3"
-  bar <- MaybeT $ return $ Just ("foo" ++ e)
+  bar <- MaybeT $ return $ Just ("foo" ++ (show e))
   return bar
