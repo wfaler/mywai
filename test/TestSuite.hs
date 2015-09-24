@@ -6,11 +6,20 @@ import Network.Wai.Handler.Warp (run)
 
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Either
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans
 --import Control.Monad.State
 
+
+runFoo :: IO (Maybe String)
+runFoo = runMaybeT foo
+
+foo :: MaybeT IO String
+foo = do
+  fmap ("f" ++) ((MaybeT . return . Just) "5")
+  
 
 main :: IO ()
 main = do
