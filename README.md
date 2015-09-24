@@ -1,4 +1,10 @@
 mywai
 =====
 
-MyWAI - yet another Haskell Sinatra clone
+WAI Webapp boilerplate that deals with:
+
+* Application outline
+* HTTP Request parsing
+* Configuration
+* Mail sending
+* DB (PostgreSQL) boilerplate
