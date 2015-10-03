@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings,TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Web.Mail(MailConfig(..),MailConfigurator(..),sendEmail,mail) where
 
 import Control.Monad.Trans.Reader
@@ -35,3 +35,5 @@ mail = ML.simpleMail from to cc bcc subject [body, html]
 
 mkMail :: Address -> [Address] -> Text -> TL.Text -> Mail
 mkMail from to subject body = ML.simpleMail from to [] [] subject [ML.plainTextPart body, ML.htmlPart body]
+
+
