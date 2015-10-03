@@ -17,7 +17,7 @@ extra-source-files:  README.md
 cabal-version:       >=1.10
 
 library
-  exposed-modules: Web.MyWai, Web.Mail
+  exposed-modules: Web.MyWai, Web.Mail, Web.Postgres, Web.Config
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.7, resource-pool, postgresql-simple, text, time, uuid, bytestring, wai, http-types, warp, aeson, containers, wai-extra, mtl, transformers, heist, random, either,blaze-builder, xmlhtml, lens,smtp-mail, mime-mail,configurator, network
